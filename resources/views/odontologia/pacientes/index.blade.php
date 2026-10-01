@@ -159,7 +159,7 @@
                 </li>
 
                 <li>
-                    <a href="{{ route('odontologia.pacientes.odontograma', $paciente) }}">
+                   <a href="{{ route('odontologia.pacientes.odontogramas', $paciente) }}">
                         <span class="atencion-icon"><i class="bi bi-grid-3x3-gap"></i></span>
                         <span>
                             <strong>Odontograma</strong>
@@ -179,7 +179,7 @@
                 </li>
 
                 <li>
-                    <a href="{{ route('odontologia.pacientes.cita', $paciente) }}">
+                   <a href="{{ route('odontologia.pacientes.citas', $paciente) }}">
                         <span class="atencion-icon"><i class="bi bi-calendar2-plus"></i></span>
                         <span>
                             <strong>Cita</strong>

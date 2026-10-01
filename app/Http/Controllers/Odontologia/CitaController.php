@@ -251,4 +251,14 @@ class CitaController extends Controller
 
         return null;
     }
+
+    public function porPaciente(Paciente $paciente)
+{
+    $citas = $paciente->citas()
+        ->with(['odontologo', 'consultorio'])
+        ->latest('fecha')
+        ->paginate(10);
+
+    return view('odontologia.citas.por-paciente', compact('paciente', 'citas'));
+}
 }

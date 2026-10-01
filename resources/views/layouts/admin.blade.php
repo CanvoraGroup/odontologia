@@ -147,10 +147,11 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="#" class="nav-link">
-                                <i class="nav-icon bi bi-grid-3x3-gap"></i>
-                                <p>Odontograma</p>
-                            </a>
+ <a href="{{ route('odontologia.odontogramas.index') }}"
+   class="nav-link {{ request()->routeIs('odontologia.odontogramas.*') ? 'active' : '' }}">
+    <i class="bi bi-grid-3x3-gap"></i>
+    <p>Odontograma</p>
+</a>
                         </li>
                         <li class="nav-item">
                             <a href="#" class="nav-link">
