@@ -44,6 +44,16 @@ Route::prefix('odontologia')->name('odontologia.')->group(function () {
     Route::resource('citas', CitaController::class)
         ->parameters(['citas' => 'cita']);
 
+Route::patch('citas/{cita}/confirmar', [CitaController::class, 'confirmar'])
+    ->name('citas.confirmar');
+
+Route::patch('citas/{cita}/cancelar', [CitaController::class, 'cancelar'])
+    ->name('citas.cancelar');
+
+Route::post('citas/{cita}/atender', [CitaController::class, 'atender'])
+    ->name('citas.atender');
+
+
     /* historia*/
     Route::get('historias-clinicas', [HistoriaClinicaController::class, 'index'])
         ->name('historias.index');

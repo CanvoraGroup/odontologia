@@ -30,9 +30,9 @@ class CitaController extends Controller
 
         $citas = Cita::with(['paciente', 'odontologo', 'consultorio', 'servicio'])
             ->whereDate('fecha', $fecha)
-            ->when($estado, fn ($query) => $query->where('estado', $estado))
-            ->when($idOdontologo, fn ($query) => $query->where('id_odontologo', $idOdontologo))
-            ->when($idConsultorio, fn ($query) => $query->where('id_consultorio', $idConsultorio))
+            ->when($estado, fn($query) => $query->where('estado', $estado))
+            ->when($idOdontologo, fn($query) => $query->where('id_odontologo', $idOdontologo))
+            ->when($idConsultorio, fn($query) => $query->where('id_consultorio', $idConsultorio))
             ->orderBy('hora_inicio')
             ->get();
 
@@ -63,11 +63,11 @@ class CitaController extends Controller
         ];
 
         $citas = Cita::with(['paciente', 'odontologo', 'consultorio', 'servicio'])
-            ->when($request->get('start'), fn ($query) => $query->whereDate('fecha', '>=', $request->get('start')))
-            ->when($request->get('end'), fn ($query) => $query->whereDate('fecha', '<=', $request->get('end')))
-            ->when($idOdontologo, fn ($query) => $query->where('id_odontologo', $idOdontologo))
-            ->when($idConsultorio, fn ($query) => $query->where('id_consultorio', $idConsultorio))
-            ->when($estado, fn ($query) => $query->where('estado', $estado))
+            ->when($request->get('start'), fn($query) => $query->whereDate('fecha', '>=', $request->get('start')))
+            ->when($request->get('end'), fn($query) => $query->whereDate('fecha', '<=', $request->get('end')))
+            ->when($idOdontologo, fn($query) => $query->where('id_odontologo', $idOdontologo))
+            ->when($idConsultorio, fn($query) => $query->where('id_consultorio', $idConsultorio))
+            ->when($estado, fn($query) => $query->where('estado', $estado))
             ->orderBy('fecha')
             ->orderBy('hora_inicio')
             ->get();
@@ -217,7 +217,7 @@ class CitaController extends Controller
             ->where('fecha', $data['fecha'])
             ->where('id_odontologo', $data['id_odontologo'])
             ->whereIn('estado', $estadosBloquean)
-            ->when($idCita, fn ($query) => $query->where('id_cita', '!=', $idCita))
+            ->when($idCita, fn($query) => $query->where('id_cita', '!=', $idCita))
             ->where('hora_inicio', '<', $data['hora_fin'])
             ->where('hora_fin', '>', $data['hora_inicio'])
             ->exists();
@@ -235,7 +235,7 @@ class CitaController extends Controller
             ->where('fecha', $data['fecha'])
             ->where('id_consultorio', $data['id_consultorio'])
             ->whereIn('estado', $estadosBloquean)
-            ->when($idCita, fn ($query) => $query->where('id_cita', '!=', $idCita))
+            ->when($idCita, fn($query) => $query->where('id_cita', '!=', $idCita))
             ->where('hora_inicio', '<', $data['hora_fin'])
             ->where('hora_fin', '>', $data['hora_inicio'])
             ->exists();
@@ -253,12 +253,48 @@ class CitaController extends Controller
     }
 
     public function porPaciente(Paciente $paciente)
-{
-    $citas = $paciente->citas()
-        ->with(['odontologo', 'consultorio'])
-        ->latest('fecha')
-        ->paginate(10);
+    {
+        $citas = $paciente->citas()
+            ->with(['odontologo', 'consultorio'])
+            ->latest('fecha')
+            ->paginate(10);
 
-    return view('odontologia.citas.por-paciente', compact('paciente', 'citas'));
+        return view('odontologia.citas.por-paciente', compact('paciente', 'citas'));
+    }
+    public function show(Cita $cita)
+{
+    $cita->load([
+        'paciente',
+        'odontologo',
+        'consultorio',
+    ]);
+
+    $paciente = $cita->paciente;
+
+    $ultimasCitas = collect();
+    $ultimosOdontogramas = collect();
+
+    if ($paciente) {
+        $ultimasCitas = $paciente->citas()
+            ->where('id_cita', '!=', $cita->id_cita)
+            ->latest('fecha')
+            ->take(5)
+            ->get();
+
+        if (method_exists($paciente, 'odontogramas')) {
+            $ultimosOdontogramas = $paciente->odontogramas()
+                ->latest('fecha_registro')
+                ->take(3)
+                ->get();
+        }
+    }
+
+    return view('odontologia.citas.show', compact(
+        'cita',
+        'paciente',
+        'ultimasCitas',
+        'ultimosOdontogramas'
+    ));
 }
+
 }
