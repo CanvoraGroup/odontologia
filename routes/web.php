@@ -8,19 +8,9 @@ use App\Http\Controllers\Odontologia\HistoriaClinicaController;
 use App\Http\Controllers\Odontologia\OdontogramaController;
 
 
-use App\Http\Controllers\Auth\LoginController;
-use Illuminate\Support\Facades\Auth;
-
 Route::get('/', function () {
-    return Auth::check() 
-        ? redirect()->route('odontologia.dashboard') 
-        : redirect()->route('login');
+    return redirect()->route('odontologia.dashboard');
 });
-
-// Rutas de Autenticación
-Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [LoginController::class, 'login'])->name('login.post');
-Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 Route::prefix('odontologia')->name('odontologia.')->group(function () {
     Route::get('/dashboard', function () {

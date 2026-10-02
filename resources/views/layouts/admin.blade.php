@@ -93,20 +93,11 @@
                     </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#">
-                            <i class="bi bi-person-circle me-1"></i>
-                            {{ Auth::user()?->nombre_completo ?? session('mock_user.nombre', 'Administrador') }}
+                            Administrador
                         </a>
-                        <div class="dropdown-menu dropdown-menu-end shadow-sm">
-                            <span class="dropdown-item-text text-muted small">
-                                {{ Auth::user()?->email ?? session('mock_user.email', 'admin@odontologia.test') }}
-                            </span>
-                            <div class="dropdown-divider"></div>
-                            <form method="POST" action="{{ route('logout') }}" id="adminLogoutForm" class="d-none">
-                                @csrf
-                            </form>
-                            <a href="#" class="dropdown-item text-danger" onclick="event.preventDefault(); document.getElementById('adminLogoutForm').submit();">
-                                <i class="bi bi-box-arrow-right me-2"></i> Cerrar sesión
-                            </a>
+                        <div class="dropdown-menu dropdown-menu-end">
+                            <a href="#" class="dropdown-item">Mi perfil</a>
+                            <a href="#" class="dropdown-item">Cerrar sesion</a>
                         </div>
                     </li>
                 </ul>
