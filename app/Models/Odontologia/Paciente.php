@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\Odontologia\Odontograma;
 use App\Models\Odontologia\Cita;
-
+use App\Models\Odontologia\Pago;
 class Paciente extends Model
 {
     protected $table = 'odo_pacientes';
@@ -30,14 +30,18 @@ class Paciente extends Model
         'id_usuario_creacion',
     ];
 
-    
-public function odontogramas(): HasMany
-{
-    return $this->hasMany(Odontograma::class, 'id_paciente', 'id_paciente');
-}
 
-public function citas(): HasMany
-{
-    return $this->hasMany(Cita::class, 'id_paciente', 'id_paciente');
-}
+    public function odontogramas(): HasMany
+    {
+        return $this->hasMany(Odontograma::class, 'id_paciente', 'id_paciente');
+    }
+
+    public function citas(): HasMany
+    {
+        return $this->hasMany(Cita::class, 'id_paciente', 'id_paciente');
+    }
+    public function pagos(): HasMany
+    {
+        return $this->hasMany(Pago::class, 'id_paciente', 'id_paciente');
+    }
 }

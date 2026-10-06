@@ -6,7 +6,7 @@ use App\Http\Controllers\Odontologia\CitaController;
 use App\Http\Controllers\Odontologia\PacienteAccionController;
 use App\Http\Controllers\Odontologia\HistoriaClinicaController;
 use App\Http\Controllers\Odontologia\OdontogramaController;
-
+use App\Http\Controllers\Odontologia\PagoController;
 
 Route::get('/', function () {
     return redirect()->route('odontologia.dashboard');
@@ -37,22 +37,23 @@ Route::prefix('odontologia')->name('odontologia.')->group(function () {
 
     Route::get('pacientes/{paciente}/caja', [PacienteAccionController::class, 'caja'])
         ->name('pacientes.caja');
-
     Route::get('citas/eventos', [CitaController::class, 'eventos'])
         ->name('citas.eventos');
 
+    Route::patch('citas/{cita}/confirmar', [CitaController::class, 'confirmar'])
+        ->name('citas.confirmar');
+
+    Route::patch('citas/{cita}/cancelar', [CitaController::class, 'cancelar'])
+        ->name('citas.cancelar');
+
+    Route::patch('citas/{cita}/atender', [CitaController::class, 'atender'])
+        ->name('citas.atender');
+
+    Route::patch('citas/{cita}/exonerar', [CitaController::class, 'exonerar'])
+        ->name('citas.exonerar');
+
     Route::resource('citas', CitaController::class)
         ->parameters(['citas' => 'cita']);
-
-Route::patch('citas/{cita}/confirmar', [CitaController::class, 'confirmar'])
-    ->name('citas.confirmar');
-
-Route::patch('citas/{cita}/cancelar', [CitaController::class, 'cancelar'])
-    ->name('citas.cancelar');
-
-Route::post('citas/{cita}/atender', [CitaController::class, 'atender'])
-    ->name('citas.atender');
-
 
     /* historia*/
     Route::get('historias-clinicas', [HistoriaClinicaController::class, 'index'])
@@ -94,6 +95,18 @@ Route::post('citas/{cita}/atender', [CitaController::class, 'atender'])
     Route::resource('odontogramas', OdontogramaController::class)
         ->parameters(['odontogramas' => 'odontograma']);
 
-        Route::get('pacientes/{paciente}/citas', [CitaController::class, 'porPaciente'])
-    ->name('pacientes.citas');
+    Route::get('pacientes/{paciente}/citas', [CitaController::class, 'porPaciente'])
+        ->name('pacientes.citas');
+
+    // pagos
+
+    Route::get('pagos/create', [PagoController::class, 'create'])
+        ->name('pagos.create');
+
+    Route::post('pagos', [PagoController::class, 'store'])
+        ->name('pagos.store');
+
+    Route::get('pagos/{pago}', [PagoController::class, 'show'])
+        ->name('pagos.show');
+        
 });

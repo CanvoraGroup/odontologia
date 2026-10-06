@@ -55,18 +55,33 @@
 
     <div class="col-md-4 mb-3">
         <label for="id_servicio" class="form-label">Servicio</label>
-        <select name="id_servicio" id="id_servicio" class="form-select @error('id_servicio') is-invalid @enderror">
-            <option value="">Sin servicio</option>
+        <select name="id_servicio"
+            id="id_servicio"
+            class="form-select @error('id_servicio') is-invalid @enderror"
+            required>
+            <option value="">Seleccione servicio</option>
             @foreach ($servicios as $servicio)
                 <option value="{{ $servicio->id_servicio }}"
+                    data-precio="{{ $servicio->precio_base }}"
+                    data-duracion="{{ $servicio->duracion_minutos }}"
                     @selected(old('id_servicio', $cita->id_servicio ?? '') == $servicio->id_servicio)>
-                    {{ $servicio->nombre }}
+                    {{ $servicio->nombre }} - S/ {{ number_format((float) $servicio->precio_base, 2) }}
                 </option>
             @endforeach
         </select>
         @error('id_servicio')
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror
+    </div>
+
+    <div class="col-md-2 mb-3">
+        <label class="form-label">Precio</label>
+        <input type="text" id="precio_servicio" class="form-control" readonly>
+    </div>
+
+    <div class="col-md-2 mb-3">
+        <label class="form-label">Duración</label>
+        <input type="text" id="duracion_servicio" class="form-control" readonly>
     </div>
 
     <div class="col-md-4 mb-3">
@@ -148,3 +163,32 @@
         @enderror
     </div>
 </div>
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const servicioSelect = document.getElementById('id_servicio');
+        const precioInput = document.getElementById('precio_servicio');
+        const duracionInput = document.getElementById('duracion_servicio');
+
+        function actualizarServicio() {
+            const option = servicioSelect.options[servicioSelect.selectedIndex];
+
+            if (!option || !option.value) {
+                precioInput.value = '';
+                duracionInput.value = '';
+                return;
+            }
+
+            const precio = parseFloat(option.dataset.precio || 0).toFixed(2);
+            const duracion = option.dataset.duracion || '';
+
+            precioInput.value = 'S/ ' + precio;
+            duracionInput.value = duracion ? duracion + ' min' : '-';
+        }
+
+        servicioSelect.addEventListener('change', actualizarServicio);
+        actualizarServicio();
+    });
+</script>
+@endpush

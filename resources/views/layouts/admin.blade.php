@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -21,7 +22,7 @@
         }
 
         .brand-link {
-            border-bottom: 1px solid rgba(255,255,255,.12);
+            border-bottom: 1px solid rgba(255, 255, 255, .12);
         }
 
         .brand-image {
@@ -69,6 +70,7 @@
 
     @stack('styles')
 </head>
+
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
     <div class="app-wrapper">
         <nav class="app-header navbar navbar-expand bg-body">
@@ -134,12 +136,12 @@
                             </a>
                         </li>
                         <li class="nav-item">
-    <a href="{{ route('odontologia.historias.index') }}"
-       class="nav-link {{ request()->routeIs('odontologia.historias.*') ? 'active' : '' }}">
-        <i class="nav-icon bi bi-journal-medical"></i>
-        <p>Historias Clinicas</p>
-    </a>
-</li>
+                            <a href="{{ route('odontologia.historias.index') }}"
+                                class="nav-link {{ request()->routeIs('odontologia.historias.*') ? 'active' : '' }}">
+                                <i class="nav-icon bi bi-journal-medical"></i>
+                                <p>Historias Clinicas</p>
+                            </a>
+                        </li>
                         <li class="nav-item">
                             <a href="#" class="nav-link">
                                 <i class="nav-icon bi bi-clipboard2-pulse"></i>
@@ -147,11 +149,11 @@
                             </a>
                         </li>
                         <li class="nav-item">
- <a href="{{ route('odontologia.odontogramas.index') }}"
-   class="nav-link {{ request()->routeIs('odontologia.odontogramas.*') ? 'active' : '' }}">
-    <i class="bi bi-grid-3x3-gap"></i>
-    <p>Odontograma</p>
-</a>
+                            <a href="{{ route('odontologia.odontogramas.index') }}"
+                                class="nav-link {{ request()->routeIs('odontologia.odontogramas.*') ? 'active' : '' }}">
+                                <i class="bi bi-grid-3x3-gap"></i>
+                                <p>Odontograma</p>
+                            </a>
                         </li>
                         <li class="nav-item">
                             <a href="#" class="nav-link">
@@ -201,7 +203,7 @@
                         <div class="col-sm-6">
                             <h1 class="mb-0">@yield('page-title', 'Panel')</h1>
                             @hasSection('page-subtitle')
-                                <p class="text-muted mb-0">@yield('page-subtitle')</p>
+                            <p class="text-muted mb-0">@yield('page-subtitle')</p>
                             @endif
                         </div>
                         <div class="col-sm-6">
@@ -233,4 +235,5 @@
 
     @stack('scripts')
 </body>
+
 </html>
