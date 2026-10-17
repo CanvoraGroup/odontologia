@@ -48,60 +48,67 @@ class CitaController extends Controller
         ));
     }
 
-    public function eventos(Request $request)
-    {
-        $idOdontologo = $request->get('id_odontologo');
-        $idConsultorio = $request->get('id_consultorio');
-        $estado = $request->get('estado');
+public function eventos(Request $request)
+{
+    $idOdontologo = $request->get('id_odontologo');
+    $idConsultorio = $request->get('id_consultorio');
+    $estado = $request->get('estado');
 
-        $colores = [
-            'PROGRAMADA' => '#0d6efd',
-            'CONFIRMADA' => '#198754',
-            'EN_ESPERA' => '#ffc107',
-            'ATENDIDA' => '#6f42c1',
-            'CANCELADA' => '#6c757d',
-            'NO_ASISTIO' => '#dc3545',
-        ];
+    $colores = [
+        'PROGRAMADA' => '#0d6efd',
+        'CONFIRMADA' => '#198754',
+        'EN_ESPERA' => '#ffc107',
+        'ATENDIDA' => '#6f42c1',
+        'CANCELADA' => '#6c757d',
+        'NO_ASISTIO' => '#dc3545',
+    ];
 
-        $citas = Cita::with(['paciente', 'odontologo', 'consultorio', 'servicio'])
-            ->when($request->get('start'), fn ($query) => $query->whereDate('fecha', '>=', $request->get('start')))
-            ->when($request->get('end'), fn ($query) => $query->whereDate('fecha', '<=', $request->get('end')))
-            ->when($idOdontologo, fn ($query) => $query->where('id_odontologo', $idOdontologo))
-            ->when($idConsultorio, fn ($query) => $query->where('id_consultorio', $idConsultorio))
-            ->when($estado, fn ($query) => $query->where('estado', $estado))
-            ->orderBy('fecha')
-            ->orderBy('hora_inicio')
-            ->get();
+    $citas = Cita::with(['paciente', 'odontologo', 'consultorio', 'servicio'])
+        ->when($request->get('start'), fn ($query) => $query->whereDate('fecha', '>=', substr($request->get('start'), 0, 10)))
+        ->when($request->get('end'), fn ($query) => $query->whereDate('fecha', '<=', substr($request->get('end'), 0, 10)))
+        ->when($idOdontologo, fn ($query) => $query->where('id_odontologo', $idOdontologo))
+        ->when($idConsultorio, fn ($query) => $query->where('id_consultorio', $idConsultorio))
+        ->when($estado, fn ($query) => $query->where('estado', $estado))
+        ->orderBy('fecha')
+        ->orderBy('hora_inicio')
+        ->get();
 
-        return response()->json(
-            $citas->map(function ($cita) use ($colores) {
-                $paciente = trim(
-                    optional($cita->paciente)->nombres . ' ' . optional($cita->paciente)->apellidos
-                );
+    return response()->json(
+        $citas->map(function ($cita) use ($colores) {
+            $fecha = $cita->fecha instanceof \Carbon\Carbon
+                ? $cita->fecha->format('Y-m-d')
+                : substr((string) $cita->fecha, 0, 10);
 
-                $color = $colores[$cita->estado] ?? '#0d6efd';
+            $horaInicio = substr((string) $cita->hora_inicio, 0, 5);
+            $horaFin = substr((string) $cita->hora_fin, 0, 5);
 
-                return [
-                    'id' => $cita->id_cita,
-                    'title' => substr($cita->hora_inicio, 0, 5) . ' - ' . $paciente,
-                    'start' => $cita->fecha . 'T' . substr($cita->hora_inicio, 0, 5),
-                    'end' => $cita->fecha . 'T' . substr($cita->hora_fin, 0, 5),
-                    'backgroundColor' => $color,
-                    'borderColor' => $color,
-                    'textColor' => $cita->estado === 'EN_ESPERA' ? '#212529' : '#ffffff',
-                    'url' => route('odontologia.citas.edit', $cita),
-                    'extendedProps' => [
-                        'estado' => $cita->estado,
-                        'estado_pago' => $cita->estado_pago,
-                        'odontologo' => trim(optional($cita->odontologo)->nombres . ' ' . optional($cita->odontologo)->apellidos),
-                        'consultorio' => optional($cita->consultorio)->nombre,
-                        'servicio' => optional($cita->servicio)->nombre ?: $cita->motivo,
-                        'precio' => optional($cita->servicio)->precio_base,
-                    ],
-                ];
-            })
-        );
-    }
+            $paciente = trim(
+                optional($cita->paciente)->nombres . ' ' . optional($cita->paciente)->apellidos
+            );
+
+            $color = $colores[$cita->estado] ?? '#0d6efd';
+
+            return [
+                'id' => $cita->id_cita,
+                'title' => $horaInicio . ' - ' . $paciente,
+                'start' => $fecha . 'T' . $horaInicio . ':00',
+                'end' => $fecha . 'T' . $horaFin . ':00',
+                'backgroundColor' => $color,
+                'borderColor' => $color,
+                'textColor' => $cita->estado === 'EN_ESPERA' ? '#212529' : '#ffffff',
+                'url' => route('odontologia.citas.edit', $cita),
+                'extendedProps' => [
+                    'estado' => $cita->estado,
+                    'estado_pago' => $cita->estado_pago,
+                    'odontologo' => trim(optional($cita->odontologo)->nombres . ' ' . optional($cita->odontologo)->apellidos),
+                    'consultorio' => optional($cita->consultorio)->nombre,
+                    'servicio' => optional($cita->servicio)->nombre ?: $cita->motivo,
+                    'precio' => optional($cita->servicio)->precio_base,
+                ],
+            ];
+        })
+    );
+}
 
     public function create()
     {
