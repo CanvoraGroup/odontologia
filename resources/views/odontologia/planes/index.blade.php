@@ -1,0 +1,21 @@
+@extends('layouts.admin')
+
+@section('title', 'Planes y presupuestos')
+@section('page-title', 'Planes y presupuestos')
+@section('page-subtitle', 'Gestiona planes de tratamiento y versiones de presupuesto')
+@section('breadcrumb', 'Planes y presupuestos')
+
+@section('content')
+<div class="container-fluid pb-4">
+    @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
+    <div class="card border-0 shadow-sm mb-3"><div class="card-body">
+        <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-3"><div><h2 class="h5 mb-1">Planes registrados</h2><p class="text-secondary mb-0">Los presupuestos se gestionan por versiones y no registran pagos.</p></div>@can('planes.crear')<a href="{{ route('odontologia.planes.create') }}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Nuevo plan</a>@endcan</div>
+        <form class="row g-2" method="GET"><div class="col-lg-5"><label class="visually-hidden">Buscar</label><input class="form-control" name="buscar" value="{{ $search }}" placeholder="Buscar por número, paciente o documento"></div><div class="col-sm-4 col-lg-3"><select class="form-select" name="id_odontologo"><option value="">Todos los odontólogos</option>@foreach($odontologos as $o)<option value="{{ $o->id_odontologo }}" @selected((string)$selectedOdontologo === (string)$o->id_odontologo)>{{ $o->nombre_completo }}</option>@endforeach</select></div><div class="col-sm-4 col-lg-2"><select class="form-select" name="estado"><option value="">Todos los estados</option>@foreach(['BORRADOR','ENVIADO','ACEPTADO','RECHAZADO'] as $value)<option value="{{ $value }}" @selected($status === $value)>{{ $value }}</option>@endforeach</select></div><div class="col-sm-4 col-lg-2"><button class="btn btn-outline-primary w-100">Filtrar</button></div></form>
+    </div></div>
+    <div class="card border-0 shadow-sm"><div class="card-body">
+        <div class="table-responsive d-none d-md-block"><table class="table align-middle"><thead><tr><th>Plan</th><th>Paciente</th><th>Odontólogo</th><th>Estado clínico</th><th>Presupuesto</th><th>Total</th><th></th></tr></thead><tbody>@forelse($planes as $plan)@php($version=$plan->versiones->first())<tr><td><strong>{{ $plan->numero }}</strong><small class="d-block text-secondary">{{ $plan->nombre }}</small></td><td>{{ $plan->paciente->nombres }} {{ $plan->paciente->apellidos }}<small class="d-block text-secondary">{{ $plan->paciente->numero_documento }}</small></td><td>{{ $plan->odontologo?->nombre_completo ?? 'Sin asignar' }}</td><td><span class="badge text-bg-light border">{{ $plan->estado_clinico }}</span></td><td><span class="badge {{ $version?->estado === 'ACEPTADO' ? 'text-bg-success' : ($version?->estado === 'ENVIADO' ? 'text-bg-primary' : 'text-bg-secondary') }}">{{ $version?->estado ?? 'BORRADOR' }}</span><small class="d-block text-secondary">{{ (($version?->numero_version ?? 1) == 1) ? 'Presupuesto inicial' : 'Revisión '.$version->numero_version }}</small></td><td>S/ {{ number_format((float)($version?->total ?? 0), 2) }}</td><td class="text-end"><a href="{{ route('odontologia.planes.show', $plan) }}" class="btn btn-sm btn-outline-primary">Ver</a></td></tr>@empty<tr><td colspan="7" class="text-center text-secondary py-5">No hay planes con estos filtros.</td></tr>@endforelse</tbody></table></div>
+        <div class="d-md-none d-grid gap-3">@forelse($planes as $plan)@php($version=$plan->versiones->first())<article class="border rounded-3 p-3"><div class="d-flex justify-content-between gap-2"><div><strong>{{ $plan->numero }}</strong><h3 class="h6 mb-1">{{ $plan->nombre }}</h3><div class="text-secondary small">{{ $plan->paciente->nombres }} {{ $plan->paciente->apellidos }}</div></div><span class="badge text-bg-light border align-self-start">{{ $version?->estado ?? 'BORRADOR' }}</span></div><div class="small mt-2">{{ $plan->odontologo?->nombre_completo ?? 'Sin odontólogo' }} · Versión {{ $version?->numero_version ?? 1 }} · S/ {{ number_format((float)($version?->total ?? 0), 2) }}</div><a href="{{ route('odontologia.planes.show', $plan) }}" class="btn btn-outline-primary w-100 mt-3">Ver plan</a></article>@empty<div class="text-center text-secondary py-5">No hay planes con estos filtros.</div>@endforelse</div>
+        {{ $planes->links() }}
+    </div></div>
+</div>
+@endsection

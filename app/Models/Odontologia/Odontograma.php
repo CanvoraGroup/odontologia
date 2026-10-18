@@ -3,11 +3,13 @@
 namespace App\Models\Odontologia;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Odontologia\Concerns\BelongsToClinic;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Odontograma extends Model
 {
+    use BelongsToClinic;
     protected $table = 'odo_odontogramas';
 
     protected $primaryKey = 'id_odontograma';

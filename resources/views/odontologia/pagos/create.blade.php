@@ -87,10 +87,11 @@
                 </div>
 
                 <div class="card-body">
-                    <form action="{{ route('odontologia.pagos.store') }}" method="POST">
+                    <form action="{{ route('odontologia.pagos.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
 
                         <input type="hidden" name="id_cita" value="{{ $cita->id_cita }}">
+                        <input type="hidden" name="idempotency_key" value="{{ old('idempotency_key', (string) \Illuminate\Support\Str::uuid()) }}">
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
@@ -127,6 +128,12 @@
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
+                            <div class="col-md-12 mb-3">
+                                <label for="evidencia" class="form-label">Adjuntar evidencia del pago <span class="text-muted">(opcional)</span></label>
+                                <input type="file" name="evidencia" id="evidencia" accept="image/jpeg,image/png,image/webp" class="form-control @error('evidencia') is-invalid @enderror">
+                                @error('evidencia')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                <small class="text-muted">JPG, PNG o WebP, máximo 5 MB. No confirma por sí sola la recepción.</small>
+                            </div>
                         </div>
 
                         <div class="alert alert-info">
@@ -139,7 +146,7 @@
                                 Cancelar
                             </a>
 
-                            <button type="submit" class="btn btn-success">
+                            <button type="submit" class="btn btn-success" data-payment-submit>
                                 Registrar pago
                             </button>
                         </div>
@@ -150,4 +157,5 @@
     </div>
 
 </div>
+<script>document.querySelector('form[action="{{ route('odontologia.pagos.store') }}"]')?.addEventListener('submit', event => { const button = event.submitter; if (button?.disabled) { event.preventDefault(); return; } if (button) { button.disabled = true; button.textContent = 'Registrando…'; } });</script>
 @endsection

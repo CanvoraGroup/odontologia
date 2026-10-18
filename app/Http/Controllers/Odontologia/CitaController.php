@@ -5,11 +5,14 @@ namespace App\Http\Controllers\Odontologia;
 use App\Http\Controllers\Controller;
 use App\Models\Odontologia\Cita;
 use App\Models\Odontologia\Consultorio;
-use App\Models\Odontologia\HistoriaClinica;
 use App\Models\Odontologia\Odontologo;
 use App\Models\Odontologia\Paciente;
 use App\Models\Odontologia\Servicio;
+use App\Rules\BelongsToCurrentClinic;
+use App\Support\DisponibilidadOdontologo;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class CitaController extends Controller
 {
@@ -63,7 +66,7 @@ public function eventos(Request $request)
         'NO_ASISTIO' => '#dc3545',
     ];
 
-    $citas = Cita::with(['paciente', 'odontologo', 'consultorio', 'servicio'])
+    $citas = Cita::with(['paciente', 'odontologo', 'consultorio', 'servicio', 'atencion'])
         ->when($request->get('start'), fn ($query) => $query->whereDate('fecha', '>=', substr($request->get('start'), 0, 10)))
         ->when($request->get('end'), fn ($query) => $query->whereDate('fecha', '<=', substr($request->get('end'), 0, 10)))
         ->when($idOdontologo, fn ($query) => $query->where('id_odontologo', $idOdontologo))
@@ -75,6 +78,19 @@ public function eventos(Request $request)
 
     return response()->json(
         $citas->map(function ($cita) use ($colores) {
+            $usuario = auth()->user();
+            $esResponsable = $usuario && (
+                $usuario->hasRole('ADMINISTRADOR')
+                || $usuario->hasRole('SUPERVISOR')
+                || ($usuario->hasRole('ODONTOLOGO')
+                    && $usuario->odontologo
+                    && (int) $usuario->odontologo->id_odontologo === (int) $cita->id_odontologo)
+            );
+            $puedeVerAtencion = $esResponsable && $usuario->hasPermission('atenciones', 'ver');
+            $puedeIniciarAtencion = $puedeVerAtencion
+                && $usuario->hasPermission('atenciones', 'iniciar')
+                && in_array($cita->estado, ['PROGRAMADA', 'CONFIRMADA', 'EN_ESPERA'], true)
+                && in_array($cita->estado_pago, ['PAGADO', 'EXONERADO'], true);
             $fecha = $cita->fecha instanceof \Carbon\Carbon
                 ? $cita->fecha->format('Y-m-d')
                 : substr((string) $cita->fecha, 0, 10);
@@ -104,6 +120,9 @@ public function eventos(Request $request)
                     'consultorio' => optional($cita->consultorio)->nombre,
                     'servicio' => optional($cita->servicio)->nombre ?: $cita->motivo,
                     'precio' => optional($cita->servicio)->precio_base,
+                    'atencion_id' => optional($cita->atencion)->id_atencion,
+                    'puede_ver_atencion' => $puedeVerAtencion,
+                    'puede_iniciar_atencion' => $puedeIniciarAtencion,
                 ],
             ];
         })
@@ -118,6 +137,7 @@ public function eventos(Request $request)
     public function store(Request $request)
     {
         $data = $this->validateCita($request);
+        $this->ensureActivePatient((int) $data['id_paciente']);
         $data['estado_pago'] = 'PENDIENTE';
 
         if ($response = $this->validarDisponibilidad($data)) {
@@ -143,6 +163,7 @@ public function eventos(Request $request)
     public function update(Request $request, Cita $cita)
     {
         $data = $this->validateCita($request);
+        $this->ensureActivePatient((int) $data['id_paciente']);
 
         if ($response = $this->validarDisponibilidad($data, $cita->id_cita)) {
             return $response;
@@ -193,6 +214,7 @@ public function eventos(Request $request)
             'odontologo',
             'consultorio',
             'servicio',
+            'atencion',
         ]);
 
         $paciente = $cita->paciente;
@@ -224,26 +246,8 @@ public function eventos(Request $request)
         ));
     }
 
-    public function atender(Cita $cita)
-    {
-        if (($cita->estado ?? '') === 'CANCELADA') {
-            return redirect()
-                ->route('odontologia.citas.show', $cita)
-                ->with('error', 'No puedes atender una cita cancelada.');
-        }
-
-        if (($cita->estado ?? '') === 'ATENDIDA') {
-            return redirect()
-                ->route('odontologia.citas.show', $cita)
-                ->with('error', 'Esta cita ya fue atendida.');
-        }
-
-        if (! in_array($cita->estado_pago, ['PAGADO', 'EXONERADO'])) {
-            return redirect()
-                ->route('odontologia.citas.show', $cita)
-                ->with('error', 'Primero debes registrar el pago o exonerar la cita.');
-        }
-
+    /* Legacy atender() flow removed: the real flow is handled by AtencionController. */
+    /*
         $historia = HistoriaClinica::firstOrCreate(
             [
                 'id_paciente' => $cita->id_paciente,
@@ -261,6 +265,8 @@ public function eventos(Request $request)
             ->route('odontologia.historias-clinicas.edit', $historia)
             ->with('success', 'Cita atendida. Puedes actualizar la historia clínica del paciente.');
     }
+
+    */
 
     public function cancelar(Cita $cita)
     {
@@ -321,7 +327,11 @@ public function eventos(Request $request)
 
     private function formView(string $view, ?Cita $cita = null)
     {
-        $pacientes = Paciente::orderBy('apellidos')
+        $patientQuery = Paciente::query()->where('estado', 'ACTIVO');
+        if ($cita?->id_paciente) {
+            $patientQuery->orWhereKey($cita->id_paciente);
+        }
+        $pacientes = $patientQuery->orderBy('apellidos')
             ->orderBy('nombres')
             ->get();
 
@@ -351,10 +361,10 @@ public function eventos(Request $request)
     private function validateCita(Request $request): array
     {
         return $request->validate([
-            'id_paciente' => ['required', 'exists:odo_pacientes,id_paciente'],
-            'id_odontologo' => ['required', 'exists:odo_odontologos,id_odontologo'],
-            'id_consultorio' => ['required', 'exists:odo_consultorios,id_consultorio'],
-            'id_servicio' => ['required', 'exists:odo_servicios,id_servicio'],
+            'id_paciente' => ['required', 'integer', new BelongsToCurrentClinic('odo_pacientes', 'id_paciente')],
+            'id_odontologo' => ['required', 'integer', new BelongsToCurrentClinic('odo_odontologos', 'id_odontologo')],
+            'id_consultorio' => ['required', 'integer', new BelongsToCurrentClinic('odo_consultorios', 'id_consultorio')],
+            'id_servicio' => ['required', 'integer', new BelongsToCurrentClinic('odo_servicios', 'id_servicio')],
             'fecha' => ['required', 'date', 'after_or_equal:today'],
             'hora_inicio' => ['required', 'date_format:H:i'],
             'hora_fin' => ['required', 'date_format:H:i', 'after:hora_inicio'],
@@ -364,8 +374,21 @@ public function eventos(Request $request)
         ]);
     }
 
+    private function ensureActivePatient(int $patientId): void
+    {
+        $patient = Paciente::whereKey($patientId)->firstOrFail();
+        if ($patient->estado !== 'ACTIVO') {
+            throw ValidationException::withMessages([
+                'id_paciente' => 'No puedes crear o reasignar una cita a un paciente inactivo. Reactívalo primero.',
+            ]);
+        }
+    }
+
     private function validarDisponibilidad(array $data, ?int $idCita = null)
     {
+        if (Schema::hasTable('odo_horarios_odontologos')) {
+            DisponibilidadOdontologo::validarCita($data, $idCita);
+        }
         $estadosBloquean = ['PROGRAMADA', 'CONFIRMADA', 'EN_ESPERA', 'ATENDIDA'];
 
         $cruceOdontologo = Cita::query()

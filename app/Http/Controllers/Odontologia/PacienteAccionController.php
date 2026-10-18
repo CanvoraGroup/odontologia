@@ -9,22 +9,23 @@ class PacienteAccionController extends Controller
 {
     public function historia(Paciente $paciente)
     {
-        return view('odontologia.pacientes.modulos.historia', compact('paciente'));
+        return redirect()->route('odontologia.pacientes.historias.index', $paciente);
     }
 
     public function his(Paciente $paciente)
     {
-        return view('odontologia.pacientes.modulos.his', compact('paciente'));
+        return redirect()->route('odontologia.pacientes.historias.index', $paciente);
     }
 
     public function odontograma(Paciente $paciente)
     {
-        return view('odontologia.pacientes.modulos.odontograma', compact('paciente'));
+        return redirect()->route('odontologia.pacientes.odontogramas', $paciente);
     }
 
     public function receta(Paciente $paciente)
     {
-        return view('odontologia.pacientes.modulos.receta', compact('paciente'));
+        abort_unless(auth()->user()?->hasPermission('recetas', 'ver'), 403, 'No tienes permiso para consultar recetas.');
+        return redirect()->route('odontologia.pacientes.recetas.index', $paciente);
     }
 
     public function cita(Paciente $paciente)
@@ -35,6 +36,6 @@ class PacienteAccionController extends Controller
 
     public function caja(Paciente $paciente)
     {
-        return view('odontologia.pacientes.modulos.caja', compact('paciente'));
+        abort(404, 'No existe una vista de Caja exclusiva por paciente.');
     }
 }

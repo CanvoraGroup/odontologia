@@ -8,6 +8,8 @@ use App\Models\Odontologia\Paciente;
 use App\Models\Odontologia\Odontologo;
 use Illuminate\Http\Request;
 use App\Models\Odontologia\HistoriaAdjunto;
+use App\Support\TenantContext;
+use App\Rules\BelongsToCurrentClinic;
 use Illuminate\Support\Facades\Storage;
 
 
@@ -61,8 +63,8 @@ class HistoriaClinicaController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'id_paciente' => ['required', 'exists:odo_pacientes,id_paciente'],
-            'id_odontologo' => ['nullable', 'exists:odo_odontologos,id_odontologo'],
+            'id_paciente' => ['required', 'integer', new BelongsToCurrentClinic('odo_pacientes', 'id_paciente')],
+            'id_odontologo' => ['nullable', 'integer', new BelongsToCurrentClinic('odo_odontologos', 'id_odontologo')],
             'fecha_atencion' => ['required', 'date'],
             'hora_atencion' => ['nullable'],
             'motivo_consulta' => ['nullable', 'string'],
@@ -111,8 +113,8 @@ public function show(HistoriaClinica $historia)
 public function update(Request $request, HistoriaClinica $historia)
 {
     $data = $request->validate([
-        'id_paciente' => ['required', 'exists:odo_pacientes,id_paciente'],
-        'id_odontologo' => ['nullable', 'exists:odo_odontologos,id_odontologo'],
+        'id_paciente' => ['required', 'integer', new BelongsToCurrentClinic('odo_pacientes', 'id_paciente')],
+        'id_odontologo' => ['nullable', 'integer', new BelongsToCurrentClinic('odo_odontologos', 'id_odontologo')],
         'fecha_atencion' => ['required', 'date'],
         'hora_atencion' => ['nullable'],
         'motivo_consulta' => ['nullable', 'string'],
@@ -147,7 +149,7 @@ public function verAdjunto(HistoriaAdjunto $adjunto)
         abort(404);
     }
 
-    $path = storage_path('app/public/' . $adjunto->archivo_path);
+    $path = $this->protectedAttachmentPath($adjunto->archivo_path);
 
     if (! file_exists($path)) {
         abort(404, 'Archivo no encontrado.');
@@ -164,7 +166,7 @@ public function descargarAdjunto(HistoriaAdjunto $adjunto)
         abort(404);
     }
 
-    $path = storage_path('app/public/' . $adjunto->archivo_path);
+    $path = $this->protectedAttachmentPath($adjunto->archivo_path);
 
     if (! file_exists($path)) {
         abort(404, 'Archivo no encontrado.');
@@ -190,7 +192,7 @@ private function guardarAdjuntos(Request $request, HistoriaClinica $historia): v
             continue;
         }
 
-        $path = $archivo->store('historias-clinicas', 'public');
+        $path = $archivo->store('empresas/'.TenantContext::requireId().'/historias-clinicas', 'local');
 
         HistoriaAdjunto::create([
             'id_historia' => $historia->id_historia,
@@ -204,5 +206,14 @@ private function guardarAdjuntos(Request $request, HistoriaClinica $historia): v
             'estado' => 'ACTIVO',
         ]);
     }
+}
+
+private function protectedAttachmentPath(string $relativePath): string
+{
+    $privatePath = Storage::disk('local')->path($relativePath);
+    if (file_exists($privatePath)) return $privatePath;
+
+    // Compatibilidad con adjuntos antiguos: siguen requiriendo esta ruta autorizada.
+    return storage_path('app/public/' . $relativePath);
 }
 }

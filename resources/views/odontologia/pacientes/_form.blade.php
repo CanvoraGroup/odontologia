@@ -23,14 +23,8 @@
 
     <div class="col-12 col-md-3">
         <label for="estado" class="form-label">Estado</label>
-        <select name="estado" id="estado" class="form-select @error('estado') is-invalid @enderror" required>
-            @foreach (['ACTIVO', 'INACTIVO'] as $item)
-                <option value="{{ $item }}" @selected(old('estado', $paciente->estado ?? 'ACTIVO') === $item)>
-                    {{ $item }}
-                </option>
-            @endforeach
-        </select>
-        @error('estado') <div class="invalid-feedback">{{ $message }}</div> @enderror
+        <input type="text" class="form-control" value="{{ $paciente->estado ?? 'ACTIVO' }}" readonly>
+        <div class="form-text">El estado se cambia desde la acción autorizada de desactivación o reactivación.</div>
     </div>
 
     <div class="col-12 col-md-3">

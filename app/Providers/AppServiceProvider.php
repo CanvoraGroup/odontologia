@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Gate;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +20,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Gate::before(function ($user, string $ability) {
+            if (! str_contains($ability, '.')) {
+                return null;
+            }
+
+            [$module, $action] = explode('.', $ability, 2);
+
+            return $user->hasPermission($module, $action);
+        });
     }
 }

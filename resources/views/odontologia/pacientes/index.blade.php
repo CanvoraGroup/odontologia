@@ -27,9 +27,9 @@
                     <div class="col-md-3">
                         <label class="form-label">Estado</label>
                         <select name="estado" class="form-select">
-                            <option value="">Todos</option>
-                            <option value="ACTIVO" {{ request('estado') == 'ACTIVO' ? 'selected' : '' }}>Activo</option>
-                            <option value="INACTIVO" {{ request('estado') == 'INACTIVO' ? 'selected' : '' }}>Inactivo</option>
+                            <option value="TODOS" @selected(($estado ?? 'ACTIVO') === 'TODOS')>Todos</option>
+                            <option value="ACTIVO" @selected(($estado ?? 'ACTIVO') === 'ACTIVO')>Activos</option>
+                            <option value="INACTIVO" @selected(($estado ?? 'ACTIVO') === 'INACTIVO')>Inactivos</option>
                         </select>
                     </div>
 
@@ -66,19 +66,21 @@
         <div class="card-header d-flex justify-content-between align-items-center">
             <span>Pacientes registrados</span>
 
-            <a href="{{ route('odontologia.pacientes.create') }}" class="btn btn-sm btn-primary">
-                <i class="bi bi-person-plus"></i> Nuevo paciente
-            </a>
+            @can('pacientes.crear')
+                <a href="{{ route('odontologia.pacientes.create') }}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-person-plus"></i> Nuevo paciente
+                </a>
+            @endcan
         </div>
 
         <div class="card-body p-0">
-            <div class="table-responsive pacientes-table-wrap">
+            <div class="d-none d-md-block pacientes-table-wrap">
                 <table class="table table-hover align-middle mb-0">
                     <thead>
                         <tr>
                             <th>Paciente</th>
                             <th>Documento</th>
-                            <th>Celular</th>
+                            <th>Teléfono</th>
                             <th>Correo</th>
                             <th>Estado</th>
                             <th class="text-end">Acciones</th>
@@ -103,7 +105,7 @@
                                 </td>
 
                                 <td>
-                                    {{ $paciente->celular ?? $paciente->telefono ?? '-' }}
+                                    {{ $paciente->telefono ?? '-' }}
                                 </td>
 
                                 <td>
@@ -129,6 +131,19 @@
             <i class="bi bi-pencil-square"></i> Editar
         </a>
 
+        @if ($paciente->estado === 'ACTIVO' && auth()->user()->can('pacientes.desactivar'))
+            <form method="POST" action="{{ route('odontologia.pacientes.deactivate', $paciente) }}" class="d-inline status-form">
+                @csrf @method('PATCH')
+                <input type="hidden" name="motivo_desactivacion">
+                <button type="submit" class="btn btn-sm btn-outline-danger" data-status-action="deactivate"><i class="bi bi-person-dash"></i> Desactivar</button>
+            </form>
+        @elseif ($paciente->estado !== 'ACTIVO' && auth()->user()->can('pacientes.reactivar'))
+            <form method="POST" action="{{ route('odontologia.pacientes.reactivate', $paciente) }}" class="d-inline" onsubmit="return confirm('¿Reactivar este paciente?')">
+                @csrf @method('PATCH')
+                <button type="submit" class="btn btn-sm btn-outline-success"><i class="bi bi-person-check"></i> Reactivar</button>
+            </form>
+        @endif
+
         <div class="atenciones-dropdown">
             <button type="button" class="btn btn-sm btn-primary btn-atenciones">
                 <i class="bi bi-clipboard2-pulse"></i> Atenciones
@@ -138,8 +153,9 @@
             <ul class="atenciones-menu">
                 <li class="atenciones-title">Atencion clinica</li>
 
+                @can('pacientes.consultar_historias')
                 <li>
-                    <a href="{{ route('odontologia.pacientes.historia', $paciente) }}">
+                    <a href="{{ route('odontologia.pacientes.historias.index', $paciente) }}">
                         <span class="atencion-icon"><i class="bi bi-journal-medical"></i></span>
                         <span>
                             <strong>Historia</strong>
@@ -147,19 +163,11 @@
                         </span>
                     </a>
                 </li>
+                @endcan
 
+                @can('odontogramas.ver')
                 <li>
-                    <a href="{{ route('odontologia.pacientes.his', $paciente) }}">
-                        <span class="atencion-icon"><i class="bi bi-clipboard2-check"></i></span>
-                        <span>
-                            <strong>Hoja HIS</strong>
-                            <small>Diagnosticos y procedimientos</small>
-                        </span>
-                    </a>
-                </li>
-
-                <li>
-                   <a href="{{ route('odontologia.pacientes.odontogramas', $paciente) }}">
+                    <a href="{{ route('odontologia.pacientes.odontogramas', $paciente) }}">
                         <span class="atencion-icon"><i class="bi bi-grid-3x3-gap"></i></span>
                         <span>
                             <strong>Odontograma</strong>
@@ -167,9 +175,11 @@
                         </span>
                     </a>
                 </li>
+                @endcan
 
+                @can('recetas.ver')
                 <li>
-                    <a href="{{ route('odontologia.pacientes.receta', $paciente) }}">
+                    <a href="{{ route('odontologia.pacientes.recetas.index', $paciente) }}">
                         <span class="atencion-icon"><i class="bi bi-capsule"></i></span>
                         <span>
                             <strong>Receta</strong>
@@ -177,7 +187,9 @@
                         </span>
                     </a>
                 </li>
+                @endcan
 
+                @can('citas.crear')
                 <li>
                    <a href="{{ route('odontologia.pacientes.citas', $paciente) }}">
                         <span class="atencion-icon"><i class="bi bi-calendar2-plus"></i></span>
@@ -187,16 +199,8 @@
                         </span>
                     </a>
                 </li>
+                @endcan
 
-                <li>
-                    <a href="{{ route('odontologia.pacientes.caja', $paciente) }}">
-                        <span class="atencion-icon"><i class="bi bi-cash-coin"></i></span>
-                        <span>
-                            <strong>Caja</strong>
-                            <small>Cobros y comprobantes</small>
-                        </span>
-                    </a>
-                </li>
             </ul>
         </div>
     </div>
@@ -212,6 +216,40 @@
                     </tbody>
                 </table>
             </div>
+        </div>
+
+        <div class="d-md-none p-3">
+            @forelse ($pacientes as $paciente)
+                <article class="patient-mobile-card {{ $paciente->estado !== 'ACTIVO' ? 'patient-mobile-card-inactive' : '' }}">
+                    <div class="d-flex justify-content-between gap-2">
+                        <div>
+                            <h2 class="h6 mb-1">{{ $paciente->apellidos }}, {{ $paciente->nombres }}</h2>
+                            <div class="small text-muted">ID {{ $paciente->id_paciente }} · {{ $paciente->tipo_documento }} {{ $paciente->numero_documento ?: 'sin documento' }}</div>
+                        </div>
+                        <span class="badge {{ $paciente->estado === 'ACTIVO' ? 'bg-success' : 'bg-secondary' }} align-self-start">{{ $paciente->estado }}</span>
+                    </div>
+                    <dl class="row small mb-3 mt-2">
+                        <dt class="col-5 text-muted">Teléfono</dt><dd class="col-7 mb-1">{{ $paciente->telefono ?: '—' }}</dd>
+                        <dt class="col-5 text-muted">Correo</dt><dd class="col-7 mb-1 text-break">{{ $paciente->correo ?: '—' }}</dd>
+                    </dl>
+                    <div class="patient-mobile-actions">
+                        <a href="{{ route('odontologia.pacientes.show', $paciente) }}" class="btn btn-sm btn-light border">Ver</a>
+                        @can('pacientes.editar')<a href="{{ route('odontologia.pacientes.edit', $paciente) }}" class="btn btn-sm btn-light border">Editar</a>@endcan
+                        @if ($paciente->estado === 'ACTIVO' && auth()->user()->can('pacientes.desactivar'))
+                            <form method="POST" action="{{ route('odontologia.pacientes.deactivate', $paciente) }}" class="status-form flex-grow-1">
+                                @csrf @method('PATCH')<input type="hidden" name="motivo_desactivacion">
+                                <button type="submit" class="btn btn-sm btn-outline-danger w-100" data-status-action="deactivate">Desactivar</button>
+                            </form>
+                        @elseif ($paciente->estado !== 'ACTIVO' && auth()->user()->can('pacientes.reactivar'))
+                            <form method="POST" action="{{ route('odontologia.pacientes.reactivate', $paciente) }}" class="flex-grow-1" onsubmit="return confirm('¿Reactivar este paciente?')">
+                                @csrf @method('PATCH')<button type="submit" class="btn btn-sm btn-outline-success w-100">Reactivar</button>
+                            </form>
+                        @endif
+                    </div>
+                </article>
+            @empty
+                <div class="text-center py-4 text-muted">No se encontraron pacientes registrados.</div>
+            @endforelse
         </div>
 
         @if ($pacientes->hasPages())
@@ -235,10 +273,13 @@
 @push('styles')
 <style>
     .pacientes-table-wrap {
-        overflow-x: auto;
-        overflow-y: visible;
-        max-height: none;
+        overflow: visible;
     }
+
+    .patient-mobile-card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 14px; margin-bottom: 12px; background: #fff; }
+    .patient-mobile-card-inactive { background: #f8fafc; border-color: #cbd5e1; }
+    .patient-mobile-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .patient-mobile-actions .btn { min-height: 38px; }
 
     .acciones-paciente-menu {
         display: flex;
@@ -334,6 +375,18 @@
         }
     }
 </style>
+@endpush
+@push('scripts')
+<script>
+document.querySelectorAll('[data-status-action="deactivate"]').forEach(function (button) {
+    button.addEventListener('click', function (event) {
+        const form = button.closest('form');
+        const reason = window.prompt('Indica el motivo de desactivación del paciente:');
+        if (!reason || !reason.trim()) { event.preventDefault(); return; }
+        form.querySelector('[name="motivo_desactivacion"]').value = reason.trim();
+    });
+});
+</script>
 @endpush
 @push('scripts')
 <script>

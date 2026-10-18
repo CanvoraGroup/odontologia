@@ -190,6 +190,6 @@
             @endif
         </div>
     </div>
-
+    <div class="card border-0 shadow-sm mt-3"><div class="card-body"><h2 class="h5">Evidencia del pago</h2>@if($pago->evidenciaActiva)<a target="_blank" class="btn btn-outline-primary" href="{{ route('odontologia.pagos.evidence', [$pago, $pago->evidenciaActiva]) }}">Ver evidencia</a>@else<p class="text-secondary mb-0">No hay evidencia adjunta.</p>@endif @can('pagos.editar')<form class="mt-3" method="POST" enctype="multipart/form-data" action="{{ route('odontologia.pagos.evidence.add',$pago) }}">@csrf<input type="file" name="evidencia" accept="image/jpeg,image/png,image/webp" class="form-control mb-2" required><button class="btn btn-sm btn-outline-secondary">Adjuntar o reemplazar evidencia</button></form>@if($pago->evidenciaActiva)<form class="mt-2" method="POST" action="{{ route('odontologia.pagos.evidence.remove',[$pago,$pago->evidenciaActiva]) }}">@csrf @method('DELETE')<input name="motivo_retiro" class="form-control form-control-sm mb-2" required maxlength="2000" placeholder="Motivo para retirar la evidencia"><button class="btn btn-sm btn-outline-danger">Retirar evidencia</button></form>@endif @endcan</div></div>
 </div>
 @endsection

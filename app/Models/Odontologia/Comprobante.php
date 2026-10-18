@@ -3,10 +3,12 @@
 namespace App\Models\Odontologia;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Odontologia\Concerns\BelongsToClinic;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Comprobante extends Model
 {
+    use BelongsToClinic;
     protected $table = 'odo_comprobantes';
     protected $primaryKey = 'id_comprobante';
 

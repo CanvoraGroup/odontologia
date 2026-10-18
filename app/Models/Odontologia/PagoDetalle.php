@@ -3,10 +3,12 @@
 namespace App\Models\Odontologia;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Odontologia\Concerns\BelongsToClinic;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PagoDetalle extends Model
 {
+    use BelongsToClinic;
     protected $table = 'odo_pago_detalles';
     protected $primaryKey = 'id_pago_detalle';
 

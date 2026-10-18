@@ -8,6 +8,7 @@ use App\Models\Odontologia\Paciente;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use App\Rules\BelongsToCurrentClinic;
 
 class OdontogramaController extends Controller
 {
@@ -126,7 +127,7 @@ class OdontogramaController extends Controller
     private function validateOdontograma(Request $request): array
     {
         return $request->validate([
-            'id_paciente' => ['required', 'exists:odo_pacientes,id_paciente'],
+            'id_paciente' => ['required', 'integer', new BelongsToCurrentClinic('odo_pacientes', 'id_paciente')],
             'id_odontologo' => ['nullable', 'integer'],
             'fecha_registro' => ['required', 'date'],
             'tipo_denticion' => ['required', Rule::in(['ADULTO', 'NINO'])],

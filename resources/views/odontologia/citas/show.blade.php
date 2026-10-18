@@ -41,6 +41,11 @@ $servicioDuracion = $cita->servicio->duracion_minutos ?? null;
 
 $puedeGestionar = ! in_array($estado, ['CANCELADA', 'ATENDIDA']);
 $puedeAtender = $puedeGestionar && in_array($estadoPago, ['PAGADO', 'EXONERADO']);
+$puedeVerAtencion = auth()->check() && auth()->user()->hasPermission('atenciones', 'ver') && (
+    auth()->user()->hasRole('ADMINISTRADOR')
+    || auth()->user()->hasRole('SUPERVISOR')
+    || (auth()->user()->hasRole('ODONTOLOGO') && auth()->user()->odontologo && (int) auth()->user()->odontologo->id_odontologo === (int) $cita->id_odontologo)
+);
 @endphp
 
 <style>
@@ -340,18 +345,20 @@ $puedeAtender = $puedeGestionar && in_array($estadoPago, ['PAGADO', 'EXONERADO']
                     </form>
                     @endif
 
-                    @if ($puedeAtender)
-                    <form action="{{ route('odontologia.citas.atender', $cita) }}"
-                        method="POST">
-                        @csrf
-                        @method('PATCH')
+                    @if ($puedeVerAtencion && ($cita->atencion || $puedeGestionar))
+                    <form action="{{ $cita->atencion ? route('odontologia.atenciones.show', $cita->atencion) : route('odontologia.citas.atencion', $cita) }}"
+                        method="GET">
 
                         <button type="submit"
                             class="btn btn-success w-100"
                             onclick="return confirm('¿Deseas iniciar la atención clínica de esta cita?');">
-                            Atender cita
+                            {{ $cita->atencion ? ($cita->atencion->estado === 'ABIERTA' ? 'Continuar atención' : 'Ver atención') : 'Atender cita' }}
                         </button>
                     </form>
+                    @elseif (! $puedeVerAtencion)
+                    <button type="button" class="btn btn-secondary w-100" disabled>
+                        Sin permiso para atención clínica
+                    </button>
                     @elseif ($puedeGestionar)
                     <button type="button" class="btn btn-secondary w-100" disabled>
                         Atender bloqueado hasta pagar o exonerar
@@ -380,11 +387,13 @@ $puedeAtender = $puedeGestionar && in_array($estadoPago, ['PAGADO', 'EXONERADO']
                         <span>›</span>
                     </a>
 
-                    <a href="#"
+                    @can('planes.crear')
+                    <a href="{{ route('odontologia.planes.create', ['paciente' => $paciente->id_paciente]) }}"
                         class="quick-link purple">
                         Ver tratamientos
                         <span>›</span>
                     </a>
+                    @endcan
 
                     <a href="#"
                         class="quick-link orange">

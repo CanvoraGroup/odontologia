@@ -5,9 +5,12 @@ namespace App\Models\Odontologia;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use App\Models\Odontologia\Concerns\BelongsToClinic;
 
 class Cita extends Model
 {
+    use BelongsToClinic;
     protected $table = 'odo_citas';
 
     protected $primaryKey = 'id_cita';
@@ -57,4 +60,9 @@ class Cita extends Model
 {
     return $this->hasMany(Pago::class, 'id_cita', 'id_cita');
 }
+
+    public function atencion(): HasOne
+    {
+        return $this->hasOne(Atencion::class, 'id_cita', 'id_cita');
+    }
 }

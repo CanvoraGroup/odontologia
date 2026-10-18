@@ -3,9 +3,11 @@
 namespace App\Models\Odontologia;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Odontologia\Concerns\BelongsToClinic;
 
 class HistoriaClinica extends Model
 {
+    use BelongsToClinic;
     protected $table = 'odo_historias_clinicas';
     protected $primaryKey = 'id_historia';
 

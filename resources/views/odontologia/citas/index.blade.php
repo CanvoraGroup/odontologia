@@ -773,6 +773,7 @@
         const kpiAtendidas = document.getElementById('kpiAtendidas');
 
         const citasBaseUrl = "{{ url('/odontologia/citas') }}";
+        const atencionesBaseUrl = "{{ url('/odontologia/atenciones') }}";
         const pagosCreateUrl = "{{ route('odontologia.pagos.create') }}";
         const csrfToken = "{{ csrf_token() }}";
 
@@ -977,7 +978,9 @@
                     const precio = props.precio ? ` · ${money(props.precio)}` : '';
                     const showUrl = event.url || `${citasBaseUrl}/${idCita}`;
                     const pagoUrl = `${pagosCreateUrl}?id_cita=${encodeURIComponent(idCita)}`;
-                    const atenderUrl = `${citasBaseUrl}/${idCita}/atender`;
+                    const atencionUrl = props.atencion_id
+                        ? `${atencionesBaseUrl}/${props.atencion_id}`
+                        : `${citasBaseUrl}/${idCita}/atencion`;
 
                     const puedePagar = props.estado_pago !== 'PAGADO' && props.estado_pago !== 'EXONERADO';
                     const puedeAtender = props.estado !== 'ATENDIDA'
@@ -1005,13 +1008,10 @@
                                     : `<button type="button" class="btn btn-outline-secondary" disabled><i class="bi bi-cash"></i> Pagar</button>`
                                 }
 
-                                <form method="POST" action="${atenderUrl}">
-                                    <input type="hidden" name="_token" value="${csrfToken}">
-                                    <input type="hidden" name="_method" value="PATCH">
-                                    <button type="submit" class="btn btn-primary w-100" ${puedeAtender ? '' : 'disabled'}>
-                                        <i class="bi bi-clipboard2-pulse"></i> Atender
-                                    </button>
-                                </form>
+                                ${props.puede_ver_atencion
+                                    ? `<a href="${atencionUrl}" class="btn btn-primary w-100"><i class="bi bi-clipboard2-pulse"></i> ${props.atencion_id ? 'Continuar' : 'Atender'}</a>`
+                                    : `<button type="button" class="btn btn-secondary w-100" disabled><i class="bi bi-lock"></i> Sin permiso</button>`
+                                }
                             </div>
                         </div>
                     `;
